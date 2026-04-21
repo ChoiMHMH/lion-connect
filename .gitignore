@@ -40,9 +40,16 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude skills
-.claude/
+# claude
+.claude/settings.local.json
+.claude/skills_legacy/
+CLAUDE.local.md
 
 # personal notes
 notes/
-AGENTS.md
+
+# refactor 내부 계획 (결과 요약은 README/docs 로 공개)
+.refactor/
+
+# 계획 산출물 (작업별 plan.md / task.md)
+.plans/

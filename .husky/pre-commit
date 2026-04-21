@@ -1,1 +1,8 @@
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "main" ]; then
+  echo "❌ main 직접 커밋 금지. 브랜치 만들어서 PR로."
+  exit 1
+fi
 
+npx lint-staged
+npm run type-check
