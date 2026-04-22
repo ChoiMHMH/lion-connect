@@ -21,6 +21,7 @@ const eslintConfig = [
       ".env*",
       "*.log",
       "dist/**",
+      "coverage/**",
     ],
   },
   {
