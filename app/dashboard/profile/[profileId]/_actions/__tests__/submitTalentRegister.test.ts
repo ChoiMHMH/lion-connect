@@ -411,6 +411,144 @@ describe("submitTalentRegister — 경력 분기 (T1 후속)", () => {
 });
 
 /**
+ * 수상/활동 섹션 분기 로직
+ *
+ * - defaultValues.activities 에 있던 id + 값 변경 → PUT (updateAward)
+ * - defaultValues.activities 에 없던 항목 → POST (createAwards, 배치)
+ * - title 이 빈 값 → skip (유효성 필터)
+ */
+describe("submitTalentRegister — 활동 분기 (T2 후속)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  type ActivityItem = NonNullable<TalentRegisterFormValues["activities"]>[number];
+
+  function buildValues(activities: ActivityItem[]): TalentRegisterFormValues {
+    const v = cloneDefaultValues();
+    v.activities = activities;
+    return v;
+  }
+
+  it("기존 변경 1개 + 신규 1개 → updateAward 1회, createAwards 1회(payload·반환 data 반영)", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const awardsApi = await import("@/lib/api/awards");
+
+    const original: ActivityItem[] = [
+      {
+        id: 40,
+        title: "이전 활동",
+        awardDate: "2024-01",
+        description: "before",
+      },
+      {
+        id: 41,
+        title: "그대로 활동",
+        awardDate: "2024-02",
+        description: "",
+      },
+    ];
+    const current: ActivityItem[] = [
+      {
+        ...original[0],
+        title: "변경 활동",
+        awardDate: "2024-03",
+        description: "changed",
+      },
+      { ...original[1] },
+      {
+        title: "신규 활동",
+        awardDate: "2025-01",
+        description: "",
+      },
+    ];
+
+    vi.mocked(awardsApi.updateAward).mockResolvedValueOnce({
+      id: 400,
+      title: "변경 활동",
+      organization: "default",
+      awardDate: "2024-03-01",
+      description: "changed",
+      createdAt: "",
+      updatedAt: "",
+    });
+    vi.mocked(awardsApi.createAwards).mockResolvedValueOnce([
+      {
+        id: 500,
+        title: "신규 활동",
+        organization: "default",
+        awardDate: "2025-01-01",
+        description: "",
+        createdAt: "",
+        updatedAt: "",
+      },
+    ]);
+
+    const values = buildValues(current);
+    const methods = makeMethods({
+      values,
+      defaultValues: { ...cloneDefaultValues(), activities: original },
+    });
+
+    const res = await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(awardsApi.updateAward).toHaveBeenCalledTimes(1);
+    expect(awardsApi.updateAward).toHaveBeenCalledWith(1, 40, {
+      title: "변경 활동",
+      organization: "default",
+      awardDate: "2024-03-01",
+      description: "changed",
+    });
+
+    expect(awardsApi.createAwards).toHaveBeenCalledTimes(1);
+    expect(awardsApi.createAwards).toHaveBeenCalledWith(1, [
+      {
+        title: "신규 활동",
+        organization: "default",
+        awardDate: "2025-01-01",
+        description: "",
+      },
+    ]);
+
+    expect(res.success).toBe(true);
+    expect(res.data?.activities?.[0]).toMatchObject({
+      id: 400,
+      title: "변경 활동",
+      awardDate: "2024-03",
+      description: "changed",
+    });
+    expect(res.data?.activities?.[2]).toMatchObject({
+      id: 500,
+      title: "신규 활동",
+      awardDate: "2025-01",
+      description: "",
+    });
+  });
+
+  it("신규 항목이 title 빈 값 → 호출 0회 (유효성 필터)", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const awardsApi = await import("@/lib/api/awards");
+
+    const values = buildValues([
+      {
+        title: "",
+        awardDate: "2025-01",
+        description: "제목 없음",
+      },
+    ]);
+    const methods = makeMethods({
+      values,
+      defaultValues: { ...cloneDefaultValues(), activities: [] },
+    });
+
+    await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(awardsApi.updateAward).not.toHaveBeenCalled();
+    expect(awardsApi.createAwards).not.toHaveBeenCalled();
+  });
+});
+
+/**
  * 공통 플로우 (T7): 업로드 순서 · status 처리 · 실패 처리
  */
 describe("submitTalentRegister — 업로드 순서·status·실패 처리 (T7)", () => {
