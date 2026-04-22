@@ -289,3 +289,94 @@ describe("submitTalentRegister — expTags 분기 (T7 후속)", () => {
     expect(expTagsApi.updateExpTags).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * customSkills 섹션 payload 로직
+ *
+ * - methods.getValues("skills.main")에서 name만 추출
+ * - 빈 문자열/공백 name은 제외
+ * - 빈 배열도 삭제 payload로 PUT
+ */
+describe("submitTalentRegister — customSkills payload (T8 후속)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function buildValues(skillsMain: unknown): TalentRegisterFormValues {
+    const v = cloneDefaultValues();
+    (v.skills as unknown as Record<string, unknown>).main = skillsMain;
+    return v;
+  }
+
+  it("skills.main 의 name 원본 문자열을 추출해 customSkills payload 로 보낸다", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const customSkillsApi = await import("@/lib/api/customSkills");
+
+    const values = buildValues([{ name: "React" }, { name: " TypeScript " }]);
+    const methods = makeMethods({ values, defaultValues: cloneDefaultValues() });
+
+    await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(customSkillsApi.updateCustomSkills).toHaveBeenCalledTimes(1);
+    expect(customSkillsApi.updateCustomSkills).toHaveBeenCalledWith(1, {
+      customSkills: ["React", " TypeScript "],
+    });
+  });
+
+  it("빈 문자열, 공백 문자열, undefined name 은 payload 에서 제외한다", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const customSkillsApi = await import("@/lib/api/customSkills");
+
+    const values = buildValues([
+      { name: "React" },
+      { name: "" },
+      { name: "   " },
+      {},
+      { name: "Next.js" },
+    ]);
+    const methods = makeMethods({ values, defaultValues: cloneDefaultValues() });
+
+    await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(customSkillsApi.updateCustomSkills).toHaveBeenCalledTimes(1);
+    expect(customSkillsApi.updateCustomSkills).toHaveBeenCalledWith(1, {
+      customSkills: ["React", "Next.js"],
+    });
+  });
+
+  it("skills.main 이 빈 배열이면 모든 스킬 삭제 payload 로 빈 배열을 PUT 한다", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const customSkillsApi = await import("@/lib/api/customSkills");
+
+    const values = buildValues([]);
+    const methods = makeMethods({ values, defaultValues: cloneDefaultValues() });
+
+    await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(customSkillsApi.updateCustomSkills).toHaveBeenCalledTimes(1);
+    expect(customSkillsApi.updateCustomSkills).toHaveBeenCalledWith(1, { customSkills: [] });
+  });
+
+  it("skills.main 이 배열이 아니거나 undefined 이면 customSkills PUT 을 호출하지 않는다", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const customSkillsApi = await import("@/lib/api/customSkills");
+
+    const stringValues = buildValues("React");
+    await submitTalentRegister({
+      values: stringValues,
+      methods: makeMethods({ values: stringValues, defaultValues: cloneDefaultValues() }),
+      profileId: 1,
+      isTempSave: true,
+    });
+
+    const undefinedValues = buildValues(undefined);
+    await submitTalentRegister({
+      values: undefinedValues,
+      methods: makeMethods({ values: undefinedValues, defaultValues: cloneDefaultValues() }),
+      profileId: 1,
+      isTempSave: true,
+    });
+
+    expect(customSkillsApi.updateCustomSkills).not.toHaveBeenCalled();
+  });
+});
