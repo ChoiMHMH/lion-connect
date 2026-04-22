@@ -578,3 +578,129 @@ describe("submitTalentRegister — 언어 분기 (T3 후속)", () => {
     expect(languagesApi.createLanguages).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * 자격증 섹션 분기 로직
+ *
+ * - defaultValues.certificates 에 있던 id + 값 변경 → PUT (updateCertification)
+ * - defaultValues.certificates 에 없던 항목 → POST (createCertifications, 배치)
+ * - name 이 빈 값 → skip (유효성 필터)
+ */
+describe("submitTalentRegister — 자격증 분기 (T4 후속)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  type CertificateItem = NonNullable<TalentRegisterFormValues["certificates"]>[number];
+
+  function buildValues(certificates: CertificateItem[]): TalentRegisterFormValues {
+    const v = cloneDefaultValues();
+    v.certificates = certificates;
+    return v;
+  }
+
+  it("기존 변경 1개 + 신규 1개 → updateCertification 1회, createCertifications 1회(payload·반환 data 반영)", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const certificationsApi = await import("@/lib/api/certifications");
+
+    const original: CertificateItem[] = [
+      {
+        id: 80,
+        name: "정보처리기사",
+        issueDate: "2024-01",
+      },
+      {
+        id: 81,
+        name: "SQLD",
+        issueDate: "2024-02",
+      },
+    ];
+    const current: CertificateItem[] = [
+      {
+        ...original[0],
+        issueDate: "2024-03",
+      },
+      { ...original[1] },
+      {
+        name: "AWS SAA",
+        issueDate: "2025-01",
+      },
+    ];
+
+    vi.mocked(certificationsApi.updateCertification).mockResolvedValueOnce({
+      id: 800,
+      name: "정보처리기사",
+      issuer: "default",
+      issueDate: "2024-03-01",
+      createdAt: "",
+      updatedAt: "",
+    });
+    vi.mocked(certificationsApi.createCertifications).mockResolvedValueOnce([
+      {
+        id: 900,
+        name: "AWS SAA",
+        issuer: "default",
+        issueDate: "2025-01-01",
+        createdAt: "",
+        updatedAt: "",
+      },
+    ]);
+
+    const values = buildValues(current);
+    const methods = makeMethods({
+      values,
+      defaultValues: { ...cloneDefaultValues(), certificates: original },
+    });
+
+    const res = await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(certificationsApi.updateCertification).toHaveBeenCalledTimes(1);
+    expect(certificationsApi.updateCertification).toHaveBeenCalledWith(1, 80, {
+      name: "정보처리기사",
+      issuer: "default",
+      issueDate: "2024-03-01",
+    });
+
+    expect(certificationsApi.createCertifications).toHaveBeenCalledTimes(1);
+    expect(certificationsApi.createCertifications).toHaveBeenCalledWith(1, [
+      {
+        name: "AWS SAA",
+        issuer: "default",
+        issueDate: "2025-01-01",
+      },
+    ]);
+
+    expect(res.success).toBe(true);
+    expect(res.data?.certificates?.[0]).toMatchObject({
+      id: 800,
+      name: "정보처리기사",
+      issueDate: "2024-03",
+    });
+    expect(res.data?.certificates?.[2]).toMatchObject({
+      id: 900,
+      name: "AWS SAA",
+      issueDate: "2025-01",
+    });
+  });
+
+  it("신규 항목이 name 빈 값 → 호출 0회 (유효성 필터)", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const certificationsApi = await import("@/lib/api/certifications");
+
+    const values = buildValues([
+      {
+        name: "",
+        issueDate: "2025-01",
+      },
+    ]);
+    const methods = makeMethods({
+      values,
+      defaultValues: { ...cloneDefaultValues(), certificates: [] },
+    });
+
+    await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(certificationsApi.updateCertification).not.toHaveBeenCalled();
+    expect(certificationsApi.createCertifications).not.toHaveBeenCalled();
+  });
+});
