@@ -87,7 +87,6 @@ export default function WorkDrivenTestSection() {
                 key={index}
                 questionNumber={index + 1}
                 questionText={question}
-                name={`workDrivenTest.q${index + 1}`}
                 value={(workDrivenTest as any)[`q${index + 1}`]}
                 onChange={(score) => handleScoreChange(index, score)}
               />

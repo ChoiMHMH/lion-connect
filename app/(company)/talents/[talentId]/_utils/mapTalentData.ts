@@ -3,28 +3,7 @@
  */
 
 import type { TalentDetailResponse } from "@/types/talent";
-import type { BadgeType } from "@/components/ui/badge";
 import { findJobGroupByJobName } from "@/constants/jobs";
-
-type BadgeItem = { label: string; type: BadgeType };
-
-/**
- * 경험 태그를 Badge 형식으로 변환
- */
-function mapExperiencesToBadges(experiences: string[]): BadgeItem[] {
-  const badgeMap: Record<string, BadgeType> = {
-    "부트캠프 수료자": "bootcamp",
-    창업자: "startup",
-    "창업 경험자": "startup",
-    전공자: "major",
-    "자격증 보유자": "certified",
-  };
-
-  return experiences.map((exp) => ({
-    label: exp,
-    type: badgeMap[exp] || "certified",
-  }));
-}
 
 /**
  * 날짜 형식 변환 (YYYY-MM-DD -> YYYY.MM)

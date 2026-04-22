@@ -6,8 +6,7 @@ import {
   createJobPosting,
   updateJobPosting,
   deleteJobPosting,
-  type Job,
-  type JobDetailResponse
+  type JobDetailResponse,
 } from "@/lib/api/jobPostings";
 import type { JobFormData, JobPostingResponse } from "@/types/job";
 import { useAuthStore } from "@/store/authStore";

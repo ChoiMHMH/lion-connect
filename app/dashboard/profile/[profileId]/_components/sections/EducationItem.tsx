@@ -53,7 +53,7 @@ export default function EducationItem({ index, educationId, onDelete }: Educatio
     try {
       setIsDeleting(true);
       await onDelete(index, educationId);
-    } catch (error) {
+    } catch {
       // Error handling
     } finally {
       setIsDeleting(false);

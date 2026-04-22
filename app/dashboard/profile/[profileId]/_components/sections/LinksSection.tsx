@@ -137,7 +137,7 @@ function LinkItem({ index, linkType, onDelete, isFocused, onFocus, onBlur }: Lin
     try {
       setIsDeleting(true);
       await onDelete(index, linkType);
-    } catch (error) {
+    } catch {
       // Error handling
     } finally {
       setIsDeleting(false);

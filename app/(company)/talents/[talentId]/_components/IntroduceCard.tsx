@@ -3,7 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import Badge from "@/components/ui/badge";
 import type { BadgeType } from "@/components/ui/badge";
-import Slider from "../../../../../components/Slider.client";
 import SkillChips from "@/components/chips/SkillChips";
 
 type BadgeItem = { label: string; type: BadgeType };
@@ -43,7 +42,6 @@ export default function IntroduceCard(props: IntroduceCardProps) {
     name,
     profileImageUrl,
     badges = [],
-    tendencies = [],
     phoneNumber,
     email,
     university,
@@ -56,8 +54,6 @@ export default function IntroduceCard(props: IntroduceCardProps) {
     talentId,
     showContacts = true,
     ctaLabel = "상세 보기",
-    summary,
-    showSummary = true,
     thumbnailUrl,
     workDrivenLevel,
     experiences = [],

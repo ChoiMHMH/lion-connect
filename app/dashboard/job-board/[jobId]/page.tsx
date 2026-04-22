@@ -18,7 +18,7 @@ export async function generateMetadata({
   try {
     const job = await fetchPublicJobPosting(jobId);
     return generateJobPostingMetadata(job);
-  } catch (error) {
+  } catch {
     return {
       title: "채용 공고를 찾을 수 없습니다",
     };
@@ -28,17 +28,13 @@ export async function generateMetadata({
 /**
  * Server Component - JSON-LD 삽입
  */
-export default async function JobDetailPage({
-  params,
-}: {
-  params: Promise<{ jobId: string }>;
-}) {
+export default async function JobDetailPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = await params;
 
   let job;
   try {
     job = await fetchPublicJobPosting(jobId);
-  } catch (error) {
+  } catch {
     notFound();
   }
 

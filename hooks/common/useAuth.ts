@@ -1,8 +1,7 @@
 "use client";
 
 import { useAuthStore, useHydration } from "@/store/authStore";
-import { useEffect, useState } from "react";
-import { UserRole, hasAnyRole } from "@/utils/rbac";
+import { useEffect } from "react";
 
 /**
  * 인증 상태 관리 훅

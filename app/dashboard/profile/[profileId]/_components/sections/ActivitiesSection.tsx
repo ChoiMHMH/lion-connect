@@ -123,9 +123,7 @@ function ActivityItem({
   });
 
   const hasActivityValue =
-    activityFields?.title ||
-    activityFields?.awardDate ||
-    activityFields?.description;
+    activityFields?.title || activityFields?.awardDate || activityFields?.description;
 
   // DELETE 핸들러
   const handleDelete = async () => {
@@ -136,7 +134,7 @@ function ActivityItem({
     try {
       setIsDeleting(true);
       await onDelete(index, activityId);
-    } catch (error) {
+    } catch {
       // Error handling
     } finally {
       setIsDeleting(false);

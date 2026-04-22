@@ -18,10 +18,7 @@ import type {
   PublicJobPostingsResponse,
   PublicJobPostingsParams,
 } from "@/types/company-job-posting";
-import type {
-  CompanyApplicantsResponse,
-  JobApplicationsRequest,
-} from "@/types/jobApplication";
+import type { CompanyApplicantsResponse, JobApplicationsRequest } from "@/types/jobApplication";
 
 export type { Job, JobDetailResponse };
 
@@ -97,7 +94,9 @@ function convertFormDataToRequest(
   imageMetadata: JobImageMetadata[]
 ): JobPostingRequest {
   // 백엔드로 전송할 때는 url, fileUrl 필드 제거
-  const cleanImageMetadata = imageMetadata.map(({ url, fileUrl, ...metadata }) => metadata);
+  const cleanImageMetadata = imageMetadata.map(
+    ({ url: _url, fileUrl: _fileUrl, ...metadata }) => metadata
+  );
 
   return {
     title: formData.title,

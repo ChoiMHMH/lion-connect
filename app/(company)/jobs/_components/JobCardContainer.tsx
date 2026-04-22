@@ -1,6 +1,10 @@
 "use client";
 
-import { useDeleteJobPosting, usePublishJobPosting, useUnpublishJobPosting } from "@/hooks/company/useJobPosting";
+import {
+  useDeleteJobPosting,
+  usePublishJobPosting,
+  useUnpublishJobPosting,
+} from "@/hooks/company/useJobPosting";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { JobCard } from "./JobCard";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -86,7 +90,6 @@ export function JobCardContainer({
 
   return (
     <JobCard
-      jobPostingId={jobPostingId}
       title={title}
       category={category}
       isPublished={isPublished}

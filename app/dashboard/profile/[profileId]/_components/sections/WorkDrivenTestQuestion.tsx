@@ -10,7 +10,6 @@ import { cn } from "@/utils/utils";
 interface WorkDrivenTestQuestionProps {
   questionNumber: number;
   questionText: string;
-  name: string;
   value?: number;
   onChange: (value: number) => void;
 }
@@ -18,7 +17,6 @@ interface WorkDrivenTestQuestionProps {
 export default function WorkDrivenTestQuestion({
   questionNumber,
   questionText,
-  name,
   value,
   onChange,
 }: WorkDrivenTestQuestionProps) {

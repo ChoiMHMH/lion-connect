@@ -35,7 +35,6 @@ import { useTalentRegisterData } from "@/hooks/talent/queries/useTalentRegisterD
 import { useInitializeTalentForm } from "@/hooks/talent/queries/useInitializeTalentForm";
 
 // Store
-import { useTalentRegisterStore } from "@/store/talentRegisterStore";
 import { useAuthStore } from "@/store/authStore";
 import { useToastStore } from "@/store/toastStore";
 
@@ -56,7 +55,6 @@ import LanguagesSection from "./_components/sections/LanguagesSection";
 import CertificatesSection from "./_components/sections/CertificatesSection";
 import LinksSection from "./_components/sections/LinksSection";
 import PortfolioSection from "./_components/sections/PortfolioSection";
-import LikelionCodeSection from "./_components/sections/LikelionCodeSection";
 import WorkDrivenTestSection from "./_components/sections/WorkDrivenTestSection";
 
 // resolver를 컴포넌트 외부로 이동 (재생성 방지)
@@ -101,9 +99,6 @@ export default function TalentRegisterPage({ params }: { params: Promise<{ profi
   // 각 섹션 컴포넌트에서 useTalentRegisterStore로 직접 사용
   const { isLoading, error } = useTalentRegisterData(profileId);
 
-  // 프로필 존재 여부 확인 (POST vs PUT 분기용)
-  const existingProfile = useTalentRegisterStore((state) => state.profile);
-
   const methods = useForm<TalentRegisterFormValues>({
     resolver: formResolver,
     defaultValues: defaultTalentRegisterValues,
@@ -114,72 +109,6 @@ export default function TalentRegisterPage({ params }: { params: Promise<{ profi
 
   // 데이터가 로드되면 자동으로 React Hook Form을 초기화
   useInitializeTalentForm(methods, isLoading);
-
-  /**
-   * 서버에서 생성된 ID만 폼에 업데이트
-   * dirty/valid 상태를 유지하면서 ID만 동기화
-   */
-  const updateFormWithServerIds = (serverData: TalentRegisterFormValues) => {
-    // 학력 ID 업데이트
-    if (serverData.educations) {
-      serverData.educations.forEach((edu, index) => {
-        if (edu.id) {
-          methods.setValue(`educations.${index}.id`, edu.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-
-    // 경력 ID 업데이트
-    if (serverData.careers) {
-      serverData.careers.forEach((career, index) => {
-        if (career.id) {
-          methods.setValue(`careers.${index}.id`, career.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-
-    // 수상/활동 ID 업데이트
-    if (serverData.activities) {
-      serverData.activities.forEach((activity, index) => {
-        if (activity.id) {
-          methods.setValue(`activities.${index}.id`, activity.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-
-    // 언어 ID 업데이트
-    if (serverData.languages) {
-      serverData.languages.forEach((lang, index) => {
-        if (lang.id) {
-          methods.setValue(`languages.${index}.id`, lang.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-
-    // 자격증 ID 업데이트
-    if (serverData.certificates) {
-      serverData.certificates.forEach((cert, index) => {
-        if (cert.id) {
-          methods.setValue(`certificates.${index}.id`, cert.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-  };
 
   /**
    * 임시 저장 핸들러

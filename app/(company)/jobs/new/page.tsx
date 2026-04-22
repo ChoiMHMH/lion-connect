@@ -12,7 +12,7 @@ export default function NewJobPage() {
 
   const handleSubmit = async (data: JobFormData) => {
     try {
-      const newJob = await createMutation.mutateAsync(data);
+      await createMutation.mutateAsync(data);
       alert("채용 공고가 등록되었습니다.");
       router.push(`/jobs`);
     } catch (error) {
