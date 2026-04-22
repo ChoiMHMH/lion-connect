@@ -7,13 +7,13 @@
 - Vitest 기반 테스트 인프라 세팅 (vitest, jsdom, testing-library, setup 파일, npm scripts)
 - `lib/apiClient.ts` 의 토큰 리프레시 동시성 동작을 단위 테스트로 증명
 - `app/dashboard/profile/[profileId]/_actions/submitTalentRegister.ts` 의 POST/PUT 분기 동작을 단위 테스트로 증명
-- GitHub Actions 워크플로우 추가 → PR 마다 type-check + lint + test 자동 실행
+- GitHub Actions 워크플로우 추가 → PR 마다 type-check + test 자동 실행
 
 **왜**
 
 - 현재 `package.json` 에 `test` 스크립트 자체가 없고 테스트 0개. 이후 리팩토링에서 회귀를 잡을 안전망이 없음.
 - 두 타깃은 서버 없이 `fetch` / 도메인 API 를 모킹해 내부 로직만 검증 가능한 영역. 공용 로직이라 회귀가 나면 광범위하게 영향.
-- CI 에서 type-check + lint + test 를 함께 돌려 품질 게이트 단일화.
+- CI 에서 type-check + test 를 함께 돌려 기본 품질 게이트를 자동화. lint 는 기존 warning 정리 후 별도 PR 에서 CI 에 추가.
 
 ## 현재 상태 진단
 
@@ -36,7 +36,7 @@
 1. **Vitest 세팅** — `vitest`, `@vitest/coverage-v8`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event` 설치. `vitest.config.ts` (jsdom / globals / setupFiles / coverage v8 / alias `@`), `test/setup.ts` (jest-dom + afterEach cleanup), `package.json` 에 `test`, `test:watch`, `test:ui`, `test:coverage` 추가.
 2. **apiClient 테스트** — `lib/__tests__/apiClient.test.ts`. `vi.spyOn(global, 'fetch')` 로 401 → refresh → 재시도 시퀀스 주입. `useAuthStore.setState` 로 초기 토큰 주입, `afterEach` 에서 리셋. `refreshPromise` 모듈 스코프 격리를 위해 필요 시 `vi.resetModules()` + dynamic import 사용.
 3. **submitTalentRegister 테스트** — `app/dashboard/profile/[profileId]/_actions/__tests__/submitTalentRegister.test.ts`. 도메인 API 함수를 `vi.mock` 으로 가짜화, RHF `UseFormReturn` 은 `renderHook(() => useForm(...))` 로 실제 인스턴스 사용. 이미지 업로드 파이프라인 (presign → S3 → complete → link) 호출 순서 검증.
-4. **GitHub Actions CI** — `.github/workflows/test.yml`. `push` / `pull_request` on `main` 트리거, `npm ci` → `npm run type-check` → `npm run lint` → `npm run test:coverage` → coverage artifact 업로드. husky 자동 실행을 막기 위해 job env 에 `HUSKY=0`.
+4. **GitHub Actions CI** — `.github/workflows/test.yml`. `push` / `pull_request` on `main` 트리거, `npm ci` → `npm run type-check` → `npm run test:coverage` → coverage artifact 업로드. husky 자동 실행을 막기 위해 job env 에 `HUSKY=0`. `npm run lint` 는 기존 warning 70개가 `--max-warnings=0` 에 걸리므로 본 PR 에서는 제외하고, 별도 이슈에서 warning 을 0으로 줄인 뒤 CI 에 추가.
 5. **하네스 워크플로우 준수** — plan 승인 후 task.md 작성 → 이슈 생성 → `test/<issue-num>-phase3-tests` 브랜치 → 첫 커밋 후 draft PR → task 단위 커밋 → CI 녹색 후 `gh pr ready`.
 
 ## 트레이드오프
@@ -46,7 +46,7 @@
 | 테스트 2개 타깃만 | 집중·속도. 한 PR 에 모을 수 있음 | 커버리지 숫자 낮게 나옴 |
 | `vi.mock` + fetch 스파이 | 설정 단순·빠름·서버 불필요 | 실제 HTTP 계층은 미커버. MSW 도입은 후속 과제 |
 | Vitest (Jest 아님) | Next 15 + ESM 친화, 설정 단순 | Jest 생태계 자료 많음 |
-| CI 에 type-check + lint + test 묶음 | 게이트 일원화 | CI 시간 증가 (~3분 예상) |
+| CI 에 type-check + test 묶음 | 현재 PR 에서 깨끗한 green 확보 | lint 는 별도 이슈 완료 전까지 CI 게이트가 아님 |
 | 하네스 task 단위 커밋 | 리뷰·롤백 쉬움 | 커밋·PR 교환 수 증가 |
 
 ## 대안
