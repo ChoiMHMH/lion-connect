@@ -1,17 +1,17 @@
-import { FieldError } from "react-hook-form";
+import type { FieldError, FieldValues, Path, UseFormRegister } from "react-hook-form";
 
-type FormFieldProps = {
+type FormFieldProps<TFieldValues extends FieldValues = FieldValues> = {
   label: string;
-  name: string;
+  name: Path<TFieldValues>;
   placeholder?: string;
   error?: FieldError;
   required?: boolean;
   type?: "text" | "email" | "tel";
-  register: any;
+  register: UseFormRegister<TFieldValues>;
   className?: string;
 };
 
-export function FormField({
+export function FormField<TFieldValues extends FieldValues = FieldValues>({
   label,
   name,
   placeholder,
@@ -20,7 +20,7 @@ export function FormField({
   type = "text",
   register,
   className,
-}: FormFieldProps) {
+}: FormFieldProps<TFieldValues>) {
   return (
     <div className={`px-6 py-4 bg-white rounded-lg flex flex-col gap-4 ${className || ""}`}>
       <div className="flex items-start gap-2">
@@ -38,17 +38,17 @@ export function FormField({
   );
 }
 
-type FormTextareaProps = {
+type FormTextareaProps<TFieldValues extends FieldValues = FieldValues> = {
   label: string;
-  name: string;
+  name: Path<TFieldValues>;
   placeholder?: string;
   error?: FieldError;
   required?: boolean;
   rows?: number;
-  register: any;
+  register: UseFormRegister<TFieldValues>;
 };
 
-export function FormTextarea({
+export function FormTextarea<TFieldValues extends FieldValues = FieldValues>({
   label,
   name,
   placeholder,
@@ -56,7 +56,7 @@ export function FormTextarea({
   required = false,
   rows = 10,
   register,
-}: FormTextareaProps) {
+}: FormTextareaProps<TFieldValues>) {
   return (
     <div className="px-6 py-4 bg-white rounded-lg flex flex-col gap-4">
       <div className="flex items-start gap-2">

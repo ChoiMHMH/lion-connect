@@ -169,7 +169,7 @@ function TalentsPageContent() {
       /** 🔥 썸네일 URL 그대로 보관 (없으면 null) */
       thumbnailUrl: t.thumbnailUrl ?? null,
       /** Work Driven Level */
-      workDrivenLevel: t.workDrivenLevel,
+      workDrivenLevel: t.workDrivenLevel ?? undefined,
       email: t.email ?? null,
       phoneNumber: t.phoneNumber ?? null,
     };

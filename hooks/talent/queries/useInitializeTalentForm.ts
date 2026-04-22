@@ -7,6 +7,8 @@ import { useAuthStore } from "@/store/authStore";
 import { mapApiDataToFormValues } from "@/utils/talentRegisterMapper";
 import type { TalentRegisterFormValues } from "@/schemas/talent/talentRegisterSchema";
 
+type WorkDrivenQuestionPath = `workDrivenTest.q${number}`;
+
 /**
  * 인재 등록 폼 초기화 훅
  *
@@ -74,9 +76,8 @@ export function useInitializeTalentForm(
     // 경력 (배열 필드 - id 포함 전체 필드 복구)
     if (formValues.careers && formValues.careers.length > 0) {
       formValues.careers.forEach((career, idx) => {
-        const careerItem = career as any;
-        if (careerItem.id !== undefined) {
-          methods.setValue(`careers.${idx}.id`, careerItem.id);
+        if (career.id !== undefined) {
+          methods.setValue(`careers.${idx}.id`, career.id);
         }
       });
     }
@@ -84,9 +85,8 @@ export function useInitializeTalentForm(
     // 학력 (배열 필드 - id 포함 전체 필드 복구)
     if (formValues.educations && formValues.educations.length > 0) {
       formValues.educations.forEach((edu, idx) => {
-        const eduItem = edu as any;
-        if (eduItem.id !== undefined) {
-          methods.setValue(`educations.${idx}.id`, eduItem.id);
+        if (edu.id !== undefined) {
+          methods.setValue(`educations.${idx}.id`, edu.id);
         }
       });
     }
@@ -94,9 +94,8 @@ export function useInitializeTalentForm(
     // 어학 (배열 필드 - id 포함 전체 필드 복구)
     if (formValues.languages && formValues.languages.length > 0) {
       formValues.languages.forEach((lang, idx) => {
-        const langItem = lang as any;
-        if (langItem.id !== undefined) {
-          methods.setValue(`languages.${idx}.id`, langItem.id);
+        if (lang.id !== undefined) {
+          methods.setValue(`languages.${idx}.id`, lang.id);
         }
       });
     }
@@ -104,9 +103,8 @@ export function useInitializeTalentForm(
     // 자격증 (배열 필드 - id 포함 전체 필드 복구)
     if (formValues.certificates && formValues.certificates.length > 0) {
       formValues.certificates.forEach((cert, idx) => {
-        const certItem = cert as any;
-        if (certItem.id !== undefined) {
-          methods.setValue(`certificates.${idx}.id`, certItem.id);
+        if (cert.id !== undefined) {
+          methods.setValue(`certificates.${idx}.id`, cert.id);
         }
       });
     }
@@ -114,9 +112,8 @@ export function useInitializeTalentForm(
     // 수상/활동 (배열 필드 - id 포함 전체 필드 복구)
     if (formValues.activities && formValues.activities.length > 0) {
       formValues.activities.forEach((activity, idx) => {
-        const activityItem = activity as any;
-        if (activityItem.id !== undefined) {
-          methods.setValue(`activities.${idx}.id`, activityItem.id);
+        if (activity.id !== undefined) {
+          methods.setValue(`activities.${idx}.id`, activity.id);
         }
       });
     }
@@ -152,7 +149,7 @@ export function useInitializeTalentForm(
       workDrivenTestResult.questionScores.forEach((questionScore) => {
         const { questionId, score } = questionScore;
         if (questionId && score !== undefined) {
-          methods.setValue(`workDrivenTest.q${questionId}` as any, score);
+          methods.setValue(`workDrivenTest.q${questionId}` as WorkDrivenQuestionPath, score);
         }
       });
     }

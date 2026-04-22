@@ -9,11 +9,7 @@ export const size = {
 };
 export const contentType = "image/png";
 
-export default async function Image({
-  params,
-}: {
-  params: Promise<{ jobId: string }>;
-}) {
+export default async function Image({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = await params;
 
   try {
@@ -160,7 +156,7 @@ export default async function Image({
         ],
       }
     );
-  } catch (error) {
+  } catch {
     // 에러 발생 시 기본 이미지 반환
     return new ImageResponse(
       (

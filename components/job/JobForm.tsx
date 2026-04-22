@@ -6,7 +6,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormInput } from "@/components/form/FormInput";
 import { FormTextarea } from "@/components/form/FormTextarea";
@@ -57,7 +57,7 @@ export function JobForm({
     setValue,
     formState: { errors, isSubmitting, isValid },
   } = useForm<JobFormData>({
-    resolver: zodResolver(isEditMode ? jobFormEditSchema : jobFormSchema) as any,
+    resolver: zodResolver(isEditMode ? jobFormEditSchema : jobFormSchema) as Resolver<JobFormData>,
     mode: "onChange",
     defaultValues: {
       images: [],

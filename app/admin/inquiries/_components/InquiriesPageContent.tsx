@@ -2,7 +2,6 @@
 
 import { useQueryParams } from "@/hooks/common/useQueryParams";
 import { useAdminInquiries } from "@/hooks/inquiry/useInquiries";
-import InquiryFilters from "./InquiryFilters";
 import InquiryListItem from "./InquiryListItem";
 import InquiryPagination from "./InquiryPagination";
 import type { InquiryListParams, InquiryStatus } from "@/types/inquiry";

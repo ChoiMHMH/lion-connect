@@ -321,7 +321,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
     try {
       const data = await response.json();
       return data as T;
-    } catch (error) {
+    } catch {
       // JSON 파싱 실패 시 빈 객체 반환 (빈 응답인 경우)
       console.warn("Failed to parse JSON response, returning empty object");
       return {} as T;

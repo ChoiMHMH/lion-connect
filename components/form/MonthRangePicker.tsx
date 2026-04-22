@@ -62,7 +62,7 @@ export function MonthRangePicker({
               const target = e.target as HTMLInputElement;
               try {
                 target.showPicker?.();
-              } catch (error) {
+              } catch {
                 // showPicker not supported, fallback to default behavior
               }
             }}
@@ -78,7 +78,7 @@ export function MonthRangePicker({
               const target = e.target as HTMLInputElement;
               try {
                 target.showPicker?.();
-              } catch (error) {
+              } catch {
                 // showPicker not supported, fallback to default behavior
               }
             }}

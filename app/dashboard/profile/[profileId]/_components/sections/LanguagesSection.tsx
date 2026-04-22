@@ -119,8 +119,7 @@ function LanguageItem({
     name: `languages.${index}`,
   });
 
-  const hasLanguageValue =
-    languageFields?.languageName || languageFields?.issueDate;
+  const hasLanguageValue = languageFields?.languageName || languageFields?.issueDate;
 
   // DELETE 핸들러
   const handleDelete = async () => {
@@ -131,7 +130,7 @@ function LanguageItem({
     try {
       setIsDeleting(true);
       await onDelete(index, languageId);
-    } catch (error) {
+    } catch {
       // Error handling
     } finally {
       setIsDeleting(false);

@@ -3,11 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  UNIVERSITY_REGION_GROUPS,
-  LIKELION_UNIVERSITIES,
-  getUniversitiesByRegionGroup,
-} from "@/constants/universities";
+import { UNIVERSITY_REGION_GROUPS, getUniversitiesByRegionGroup } from "@/constants/universities";
 import CTAButton from "@/components/buttons/CTAButton";
 import { useScrollAnimation } from "@/hooks/common/useScrollAnimation";
 import UniversityCard from "./UniversityCard";

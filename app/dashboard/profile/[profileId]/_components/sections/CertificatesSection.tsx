@@ -130,7 +130,7 @@ function CertificateItem({
     try {
       setIsDeleting(true);
       await onDelete(index, certificateId);
-    } catch (error) {
+    } catch {
       // Error handling
     } finally {
       setIsDeleting(false);

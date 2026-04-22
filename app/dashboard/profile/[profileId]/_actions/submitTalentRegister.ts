@@ -26,6 +26,13 @@ import { updateJobs } from "@/lib/api/jobs";
 import { updateCustomSkills } from "@/lib/api/customSkills";
 import { EXP_TAG_ID_MAP, type ExpTagKey } from "@/lib/expTags/map";
 import { findJobRoleByCode } from "@/constants/jobMapping";
+import type {
+  AwardRequest,
+  CertificationRequest,
+  EducationRequest,
+  ExperienceRequest,
+  LanguageRequest,
+} from "@/types/talent";
 import {
   presignThumbnail,
   completeThumbnailUpload,
@@ -33,7 +40,11 @@ import {
   upsertThumbnailLink,
   upsertProfileLink,
 } from "@/lib/api/profileThumbnail";
-import { presignPortfolio, completePortfolioUpload, uploadPortfolioToS3 } from "@/lib/api/profilePortfolio";
+import {
+  presignPortfolio,
+  completePortfolioUpload,
+  uploadPortfolioToS3,
+} from "@/lib/api/profilePortfolio";
 import { submitWorkDrivenTest } from "@/lib/api/workDriven";
 
 interface SubmitTalentRegisterParams {
@@ -42,6 +53,12 @@ interface SubmitTalentRegisterParams {
   profileId: number;
   isTempSave?: boolean; // 임시 저장 여부 (true: validation 우회, false: 최종 제출)
 }
+
+type PendingEducationCreate = { data: EducationRequest; index: number };
+type PendingExperienceCreate = { data: ExperienceRequest; index: number };
+type PendingAwardCreate = { data: AwardRequest; index: number };
+type PendingLanguageCreate = { data: LanguageRequest; index: number };
+type PendingCertificationCreate = { data: CertificationRequest; index: number };
 
 /**
  * yyyy-mm 형식을 yyyy-mm-dd 형식으로 변환
@@ -205,14 +222,14 @@ export async function submitTalentRegister({
     }
 
     // 커스텀 스킬 (PUT) - 배열
-    const currentSkills = methods.getValues("skills.main" as any);
+    const currentSkills = methods.getValues("skills.main");
 
     if (currentSkills && Array.isArray(currentSkills)) {
       // 스킬 이름 추출 (빈 문자열 제외)
       const skillNames: string[] = [];
 
-      currentSkills.forEach((skill: any) => {
-        const skillName = typeof skill === "string" ? skill : skill?.name;
+      currentSkills.forEach((skill) => {
+        const skillName = skill.name;
         if (skillName && skillName.trim() !== "") {
           skillNames.push(skillName);
         }
@@ -226,7 +243,7 @@ export async function submitTalentRegister({
     // 변경된 항목만 처리 (dirtyFields 대신 값 비교 사용)
     // dirtyFields는 배열 요소 삭제/이동 시 인덱스 문제로 정확하지 않을 수 있음
     if (values.educations && values.educations.length > 0) {
-      const newEducationsToPost: { data: any; index: number }[] = [];
+      const newEducationsToPost: PendingEducationCreate[] = [];
       const defaultEducations = methods.formState.defaultValues?.educations || [];
 
       values.educations.forEach((edu, index) => {
@@ -345,7 +362,7 @@ export async function submitTalentRegister({
 
     // 경력 (POST/PUT) - 배열
     if (values.careers && values.careers.length > 0) {
-      const newCareersToPost: { data: any; index: number }[] = [];
+      const newCareersToPost: PendingExperienceCreate[] = [];
       const defaultCareers = methods.formState.defaultValues?.careers || [];
 
       values.careers.forEach((career, index) => {
@@ -449,7 +466,7 @@ export async function submitTalentRegister({
 
     // 수상/활동 (POST/PUT) - 배열
     if (values.activities && values.activities.length > 0) {
-      const newActivitiesToPost: { data: any; index: number }[] = [];
+      const newActivitiesToPost: PendingAwardCreate[] = [];
       const defaultActivities = methods.formState.defaultValues?.activities || [];
 
       values.activities.forEach((activity, index) => {
@@ -535,7 +552,7 @@ export async function submitTalentRegister({
 
     // 언어 (POST/PUT) - 배열
     if (values.languages && values.languages.length > 0) {
-      const newLanguagesToPost: { data: any; index: number }[] = [];
+      const newLanguagesToPost: PendingLanguageCreate[] = [];
       const defaultLanguages = methods.formState.defaultValues?.languages || [];
 
       values.languages.forEach((lang, index) => {
@@ -616,7 +633,7 @@ export async function submitTalentRegister({
 
     // 자격증 (POST/PUT) - 배열
     if (values.certificates && values.certificates.length > 0) {
-      const newCertificatesToPost: { data: any; index: number }[] = [];
+      const newCertificatesToPost: PendingCertificationCreate[] = [];
       const defaultCertificates = methods.formState.defaultValues?.certificates || [];
 
       values.certificates.forEach((cert, index) => {
@@ -730,7 +747,7 @@ export async function submitTalentRegister({
 
       // q1~q16을 questionId와 score로 변환
       for (let i = 1; i <= 16; i++) {
-        const score = (values.workDrivenTest as any)[`q${i}`];
+        const score = values.workDrivenTest[`q${i}`];
         if (score !== undefined && score !== null) {
           answers.push({
             questionId: i,

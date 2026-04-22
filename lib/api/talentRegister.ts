@@ -4,8 +4,6 @@
  * - api-integration SKILL 패턴 준수
  */
 
-import { get } from "@/lib/apiClient";
-import { API_ENDPOINTS } from "@/constants/api";
 import { fetchProfile } from "./profiles";
 import { fetchEducations } from "./educations";
 import { fetchExperiences } from "./experiences";

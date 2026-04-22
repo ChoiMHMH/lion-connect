@@ -22,11 +22,7 @@ interface CareerItemProps {
 export default function CareerItem({ index, careerId, onDelete }: CareerItemProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const {
-    register,
-    formState: { errors },
-    control,
-  } = useFormContext<TalentRegisterFormValues>();
+  const { register, control } = useFormContext<TalentRegisterFormValues>();
 
   // useWatch를 컴포넌트 최상위에서 호출 (Hook의 순서 유지)
   const careerFields = useWatch({
@@ -51,7 +47,7 @@ export default function CareerItem({ index, careerId, onDelete }: CareerItemProp
     try {
       setIsDeleting(true);
       await onDelete(index, careerId);
-    } catch (error) {
+    } catch {
       // Error handling
     } finally {
       setIsDeleting(false);

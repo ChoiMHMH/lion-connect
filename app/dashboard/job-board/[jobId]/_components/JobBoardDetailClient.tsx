@@ -18,6 +18,25 @@ interface JobBoardDetailClientProps {
   jobId: string;
 }
 
+function getErrorStatus(error: unknown): number | undefined {
+  if (typeof error !== "object" || error === null) {
+    return undefined;
+  }
+
+  if ("statusCode" in error && typeof error.statusCode === "number") {
+    return error.statusCode;
+  }
+
+  if ("response" in error) {
+    const response = error.response;
+    if (typeof response === "object" && response !== null && "status" in response) {
+      return typeof response.status === "number" ? response.status : undefined;
+    }
+  }
+
+  return undefined;
+}
+
 export default function JobBoardDetailClient({ jobId }: JobBoardDetailClientProps) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -53,11 +72,11 @@ export default function JobBoardDetailClient({ jobId }: JobBoardDetailClientProp
       if (goToApplications) {
         router.push("/applications");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("지원하기 실패:", error);
 
       // 500 에러인 경우 토스트 메시지 표시
-      if (error?.response?.status === 500) {
+      if (getErrorStatus(error) === 500) {
         showToast("취소한 요청에는 다시 지원할 수 없습니다.", "error");
       } else {
         showToast("지원하기에 실패했습니다. 다시 시도해주세요.", "error");
@@ -70,7 +89,7 @@ export default function JobBoardDetailClient({ jobId }: JobBoardDetailClientProp
 
   if (error) {
     // ApiError에서 message 추출
-    const errorMessage = (error as any)?.message || "채용 공고를 불러올 수 없습니다.";
+    const errorMessage = error instanceof Error ? error.message : "채용 공고를 불러올 수 없습니다.";
 
     return (
       <div className="w-full min-h-screen bg-white flex flex-col justify-center items-center gap-4">

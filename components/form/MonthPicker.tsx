@@ -45,7 +45,7 @@ export function MonthPicker({ value, register, id, className }: MonthPickerProps
               const target = e.target as HTMLInputElement;
               try {
                 target.showPicker?.();
-              } catch (error) {
+              } catch {
                 // showPicker not supported, fallback to default behavior
               }
             }}

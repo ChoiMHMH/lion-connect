@@ -19,7 +19,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   talentRegisterSchema,
@@ -35,7 +35,6 @@ import { useTalentRegisterData } from "@/hooks/talent/queries/useTalentRegisterD
 import { useInitializeTalentForm } from "@/hooks/talent/queries/useInitializeTalentForm";
 
 // Store
-import { useTalentRegisterStore } from "@/store/talentRegisterStore";
 import { useAuthStore } from "@/store/authStore";
 import { useToastStore } from "@/store/toastStore";
 
@@ -56,11 +55,15 @@ import LanguagesSection from "./_components/sections/LanguagesSection";
 import CertificatesSection from "./_components/sections/CertificatesSection";
 import LinksSection from "./_components/sections/LinksSection";
 import PortfolioSection from "./_components/sections/PortfolioSection";
-import LikelionCodeSection from "./_components/sections/LikelionCodeSection";
 import WorkDrivenTestSection from "./_components/sections/WorkDrivenTestSection";
 
 // resolver를 컴포넌트 외부로 이동 (재생성 방지)
 const formResolver = zodResolver(talentRegisterSchema);
+
+type ValidationErrorItem = {
+  key: string;
+  message: string;
+};
 
 export default function TalentRegisterPage({ params }: { params: Promise<{ profileId: string }> }) {
   const router = useRouter();
@@ -101,9 +104,6 @@ export default function TalentRegisterPage({ params }: { params: Promise<{ profi
   // 각 섹션 컴포넌트에서 useTalentRegisterStore로 직접 사용
   const { isLoading, error } = useTalentRegisterData(profileId);
 
-  // 프로필 존재 여부 확인 (POST vs PUT 분기용)
-  const existingProfile = useTalentRegisterStore((state) => state.profile);
-
   const methods = useForm<TalentRegisterFormValues>({
     resolver: formResolver,
     defaultValues: defaultTalentRegisterValues,
@@ -114,72 +114,6 @@ export default function TalentRegisterPage({ params }: { params: Promise<{ profi
 
   // 데이터가 로드되면 자동으로 React Hook Form을 초기화
   useInitializeTalentForm(methods, isLoading);
-
-  /**
-   * 서버에서 생성된 ID만 폼에 업데이트
-   * dirty/valid 상태를 유지하면서 ID만 동기화
-   */
-  const updateFormWithServerIds = (serverData: TalentRegisterFormValues) => {
-    // 학력 ID 업데이트
-    if (serverData.educations) {
-      serverData.educations.forEach((edu, index) => {
-        if (edu.id) {
-          methods.setValue(`educations.${index}.id`, edu.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-
-    // 경력 ID 업데이트
-    if (serverData.careers) {
-      serverData.careers.forEach((career, index) => {
-        if (career.id) {
-          methods.setValue(`careers.${index}.id`, career.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-
-    // 수상/활동 ID 업데이트
-    if (serverData.activities) {
-      serverData.activities.forEach((activity, index) => {
-        if (activity.id) {
-          methods.setValue(`activities.${index}.id`, activity.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-
-    // 언어 ID 업데이트
-    if (serverData.languages) {
-      serverData.languages.forEach((lang, index) => {
-        if (lang.id) {
-          methods.setValue(`languages.${index}.id`, lang.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-
-    // 자격증 ID 업데이트
-    if (serverData.certificates) {
-      serverData.certificates.forEach((cert, index) => {
-        if (cert.id) {
-          methods.setValue(`certificates.${index}.id`, cert.id, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-        }
-      });
-    }
-  };
 
   /**
    * 임시 저장 핸들러
@@ -264,14 +198,17 @@ export default function TalentRegisterPage({ params }: { params: Promise<{ profi
   /**
    * validation 에러 발생 시 가장 위에 있는 에러 필드로 스크롤 + 토스트 알림
    */
-  const onError = (errors: any) => {
+  const onError = (errors: FieldErrors<TalentRegisterFormValues>) => {
     // 모든 에러 정보 수집 (key와 message)
-    const getAllErrors = (obj: any, prefix = ""): { key: string; message: string }[] => {
-      const result: { key: string; message: string }[] = [];
+    const getAllErrors = (obj: unknown, prefix = ""): ValidationErrorItem[] => {
+      const result: ValidationErrorItem[] = [];
 
-      for (const key in obj) {
+      if (typeof obj !== "object" || obj === null) {
+        return result;
+      }
+
+      for (const [key, value] of Object.entries(obj)) {
         const fullKey = prefix ? `${prefix}.${key}` : key;
-        const value = obj[key];
 
         // 배열인 경우 (예: educations.0.schoolName)
         if (Array.isArray(value)) {
@@ -282,8 +219,11 @@ export default function TalentRegisterPage({ params }: { params: Promise<{ profi
           }
         }
         // 에러 객체인 경우 (message가 있음)
-        else if (value?.message) {
-          result.push({ key: fullKey, message: value.message });
+        else if (typeof value === "object" && value !== null && "message" in value) {
+          const message = value.message;
+          if (typeof message === "string") {
+            result.push({ key: fullKey, message });
+          }
         }
         // 중첩 객체인 경우
         else if (typeof value === "object" && value !== null) {
