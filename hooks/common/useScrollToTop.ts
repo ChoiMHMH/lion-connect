@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { throttle } from "@/utils/throttle";
 import {
   SCROLL_TO_TOP_THRESHOLD,
@@ -24,9 +24,10 @@ export function useScrollToTop() {
   }, []);
 
   // throttle 적용된 스크롤 핸들러
-  const throttledHandleScroll = useCallback(throttle(handleScroll, SCROLL_THROTTLE_DELAY), [
-    handleScroll,
-  ]);
+  const throttledHandleScroll = useMemo(
+    () => throttle(handleScroll, SCROLL_THROTTLE_DELAY),
+    [handleScroll]
+  );
 
   // 맨 위로 스크롤
   const scrollToTop = useCallback(() => {

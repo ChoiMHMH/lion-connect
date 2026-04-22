@@ -95,14 +95,26 @@ export function useNavigation(navLinks: NavLink[]) {
     const element = navRefs.current[activeIndex];
 
     if (activeIndex !== -1 && element) {
-      setIndicatorStyle({
+      const nextStyle = {
         left: element.offsetLeft,
         width: element.offsetWidth,
+      };
+
+      setIndicatorStyle((currentStyle) => {
+        if (currentStyle.left === nextStyle.left && currentStyle.width === nextStyle.width) {
+          return currentStyle;
+        }
+        return nextStyle;
       });
     } else {
-      setIndicatorStyle({ left: 0, width: 0 });
+      setIndicatorStyle((currentStyle) => {
+        if (currentStyle.left === 0 && currentStyle.width === 0) {
+          return currentStyle;
+        }
+        return { left: 0, width: 0 };
+      });
     }
-  }, [pathname, activeSection]);
+  }, [pathname, activeSection, navLinks]);
 
   /**
    * 네비게이션 클릭 핸들러
