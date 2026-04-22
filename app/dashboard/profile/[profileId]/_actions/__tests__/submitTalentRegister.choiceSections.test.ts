@@ -380,3 +380,88 @@ describe("submitTalentRegister — customSkills payload (T8 후속)", () => {
     expect(customSkillsApi.updateCustomSkills).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * workDriven 섹션 분기 로직
+ *
+ * - q1~q16이 모두 있으면 제출
+ * - 일부만 있거나 빈 객체/undefined이면 skip
+ * - answers payload는 questionId 순서를 유지
+ */
+describe("submitTalentRegister — workDriven payload (T9 후속)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function buildValues(workDrivenTest: TalentRegisterFormValues["workDrivenTest"]) {
+    const v = cloneDefaultValues();
+    v.workDrivenTest = workDrivenTest;
+    return v;
+  }
+
+  function completeAnswers(): NonNullable<TalentRegisterFormValues["workDrivenTest"]> {
+    return Array.from({ length: 16 }).reduce<Record<string, number>>((acc, _, index) => {
+      acc[`q${index + 1}`] = (index % 5) + 1;
+      return acc;
+    }, {});
+  }
+
+  it("q1~q16이 모두 있으면 questionId 순서와 score를 유지해 submitWorkDrivenTest 를 호출한다", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const workDrivenApi = await import("@/lib/api/workDriven");
+
+    const workDrivenTest = completeAnswers();
+    const values = buildValues(workDrivenTest);
+    const methods = makeMethods({ values, defaultValues: cloneDefaultValues() });
+
+    await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    const expectedAnswers = Array.from({ length: 16 }).map((_, index) => ({
+      questionId: index + 1,
+      score: workDrivenTest[`q${index + 1}`],
+    }));
+
+    expect(workDrivenApi.submitWorkDrivenTest).toHaveBeenCalledTimes(1);
+    expect(workDrivenApi.submitWorkDrivenTest).toHaveBeenCalledWith(1, {
+      answers: expectedAnswers,
+    });
+  });
+
+  it("일부 문항이 빠져 있으면 submitWorkDrivenTest 를 호출하지 않는다", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const workDrivenApi = await import("@/lib/api/workDriven");
+
+    const partial = completeAnswers();
+    delete partial.q8;
+
+    const values = buildValues(partial);
+    const methods = makeMethods({ values, defaultValues: cloneDefaultValues() });
+
+    await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(workDrivenApi.submitWorkDrivenTest).not.toHaveBeenCalled();
+  });
+
+  it("workDrivenTest 가 undefined 또는 빈 객체이면 submitWorkDrivenTest 를 호출하지 않는다", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const workDrivenApi = await import("@/lib/api/workDriven");
+
+    const undefinedValues = buildValues(undefined);
+    await submitTalentRegister({
+      values: undefinedValues,
+      methods: makeMethods({ values: undefinedValues, defaultValues: cloneDefaultValues() }),
+      profileId: 1,
+      isTempSave: true,
+    });
+
+    const emptyValues = buildValues({});
+    await submitTalentRegister({
+      values: emptyValues,
+      methods: makeMethods({ values: emptyValues, defaultValues: cloneDefaultValues() }),
+      profileId: 1,
+      isTempSave: true,
+    });
+
+    expect(workDrivenApi.submitWorkDrivenTest).not.toHaveBeenCalled();
+  });
+});
