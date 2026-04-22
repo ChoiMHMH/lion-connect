@@ -7,10 +7,23 @@ import { ResumeListHeader } from "./_components/ResumeListHeader";
 import { ResumeCardSkeleton } from "./_components/ResumeCardSkeleton";
 import { useMyProfiles } from "@/hooks/talent/queries/useMyProfiles";
 import { createEmptyProfile, updateProfile, deleteProfile } from "@/lib/api/profiles";
+import type { ProfileListResponse, ProfileRequest } from "@/types/talent";
 import { useToastStore } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useDebounce } from "@/hooks/common/useDebounce";
+
+function toToggledVisibilityRequest(profile: ProfileListResponse): ProfileRequest {
+  return {
+    name: profile.name,
+    title: profile.title,
+    introduction: profile.introduction,
+    storageUrl: profile.storageUrl,
+    likelionCode: profile.likelionCode ?? undefined,
+    visibility: profile.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC",
+    status: profile.status,
+  };
+}
 
 function ProfilePage() {
   const router = useRouter();
@@ -33,11 +46,8 @@ function ProfilePage() {
 
   // 공개/비공개 토글 mutation
   const togglePublicMutation = useMutation({
-    mutationFn: ({ id, profile }: { id: number; profile: any }) =>
-      updateProfile(id, {
-        ...profile,
-        visibility: profile.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC",
-      }),
+    mutationFn: ({ id, profile }: { id: number; profile: ProfileListResponse }) =>
+      updateProfile(id, toToggledVisibilityRequest(profile)),
     onSuccess: () => {
       showToast("공개 설정이 변경되었습니다.");
       queryClient.invalidateQueries({ queryKey: ["profile", "list", userId] });
@@ -65,26 +75,17 @@ function ProfilePage() {
     createMutation.mutate();
   }, 300);
 
-  const debouncedToggleMutate = useDebounce(
-    (id: number, profile: any) => {
-      togglePublicMutation.mutate({ id, profile });
-    },
-    300
-  );
+  const debouncedToggleMutate = useDebounce((id: number, profile: ProfileListResponse) => {
+    togglePublicMutation.mutate({ id, profile });
+  }, 300);
 
-  const debouncedDeleteMutate = useDebounce(
-    (id: number) => {
-      deleteMutation.mutate(id);
-    },
-    300
-  );
+  const debouncedDeleteMutate = useDebounce((id: number) => {
+    deleteMutation.mutate(id);
+  }, 300);
 
-  const debouncedPush = useDebounce(
-    (path: string) => {
-      router.push(path);
-    },
-    300
-  );
+  const debouncedPush = useDebounce((path: string) => {
+    router.push(path);
+  }, 300);
 
   const handleRegister = () => {
     debouncedCreateMutate();

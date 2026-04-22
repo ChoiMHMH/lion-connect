@@ -14,14 +14,14 @@ import { useCallback, useRef } from "react";
  * @param delay 디바운싱 지연 시간 (기본값: 1000ms)
  * @returns 디바운싱이 적용된 콜백 함수
  */
-export function useDebounce<T extends (...args: any[]) => any>(
-  callback: T,
+export function useDebounce<TArgs extends unknown[]>(
+  callback: (...args: TArgs) => void,
   delay: number = 1000
-): T {
+): (...args: TArgs) => void {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const debouncedCallback = useCallback(
-    (...args: Parameters<T>) => {
+    (...args: TArgs) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -31,7 +31,7 @@ export function useDebounce<T extends (...args: any[]) => any>(
       }, delay);
     },
     [callback, delay]
-  ) as T;
+  );
 
   return debouncedCallback;
 }

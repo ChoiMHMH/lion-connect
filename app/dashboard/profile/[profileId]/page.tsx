@@ -19,7 +19,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   talentRegisterSchema,
@@ -59,6 +59,11 @@ import WorkDrivenTestSection from "./_components/sections/WorkDrivenTestSection"
 
 // resolver를 컴포넌트 외부로 이동 (재생성 방지)
 const formResolver = zodResolver(talentRegisterSchema);
+
+type ValidationErrorItem = {
+  key: string;
+  message: string;
+};
 
 export default function TalentRegisterPage({ params }: { params: Promise<{ profileId: string }> }) {
   const router = useRouter();
@@ -193,14 +198,17 @@ export default function TalentRegisterPage({ params }: { params: Promise<{ profi
   /**
    * validation 에러 발생 시 가장 위에 있는 에러 필드로 스크롤 + 토스트 알림
    */
-  const onError = (errors: any) => {
+  const onError = (errors: FieldErrors<TalentRegisterFormValues>) => {
     // 모든 에러 정보 수집 (key와 message)
-    const getAllErrors = (obj: any, prefix = ""): { key: string; message: string }[] => {
-      const result: { key: string; message: string }[] = [];
+    const getAllErrors = (obj: unknown, prefix = ""): ValidationErrorItem[] => {
+      const result: ValidationErrorItem[] = [];
 
-      for (const key in obj) {
+      if (typeof obj !== "object" || obj === null) {
+        return result;
+      }
+
+      for (const [key, value] of Object.entries(obj)) {
         const fullKey = prefix ? `${prefix}.${key}` : key;
-        const value = obj[key];
 
         // 배열인 경우 (예: educations.0.schoolName)
         if (Array.isArray(value)) {
@@ -211,8 +219,11 @@ export default function TalentRegisterPage({ params }: { params: Promise<{ profi
           }
         }
         // 에러 객체인 경우 (message가 있음)
-        else if (value?.message) {
-          result.push({ key: fullKey, message: value.message });
+        else if (typeof value === "object" && value !== null && "message" in value) {
+          const message = value.message;
+          if (typeof message === "string") {
+            result.push({ key: fullKey, message });
+          }
         }
         // 중첩 객체인 경우
         else if (typeof value === "object" && value !== null) {

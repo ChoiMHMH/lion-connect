@@ -28,6 +28,8 @@ const QUESTIONS = [
   "일이 잘 풀릴 때는 주말도 잊을 정도로 일에 빠져든다.",
 ];
 
+type WorkDrivenQuestionPath = `workDrivenTest.q${number}`;
+
 export default function WorkDrivenTestSection() {
   const {
     watch,
@@ -41,7 +43,7 @@ export default function WorkDrivenTestSection() {
   register("workDrivenTest");
 
   const handleScoreChange = (questionIndex: number, score: number) => {
-    setValue(`workDrivenTest.q${questionIndex + 1}` as any, score, {
+    setValue(`workDrivenTest.q${questionIndex + 1}` as WorkDrivenQuestionPath, score, {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -87,7 +89,7 @@ export default function WorkDrivenTestSection() {
                 key={index}
                 questionNumber={index + 1}
                 questionText={question}
-                value={(workDrivenTest as any)[`q${index + 1}`]}
+                value={workDrivenTest[`q${index + 1}`]}
                 onChange={(score) => handleScoreChange(index, score)}
               />
             ))}

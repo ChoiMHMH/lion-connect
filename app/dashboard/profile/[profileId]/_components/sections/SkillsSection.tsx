@@ -15,8 +15,8 @@ import { useEffect, useCallback, useState } from "react";
  */
 
 interface SkillItem {
-  id?: number;
-  name: string;
+  id?: number | string;
+  name?: string;
 }
 
 export default function SkillsSection() {
@@ -26,7 +26,7 @@ export default function SkillsSection() {
   const [localSkills, setLocalSkills] = useState<SkillItem[]>([{ name: "" }]);
 
   // 폼 값 변경 감지 (reset 시 동기화)
-  const formSkills = watch("skills.main" as any);
+  const formSkills = watch("skills.main");
 
   // 폼 값이 외부에서 변경되면 로컬 상태 동기화 (reset 호출 시)
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function SkillsSection() {
     (newSkills: SkillItem[]) => {
       setLocalSkills(newSkills);
       // 폼에 전체 배열을 한번에 설정 (shouldUnregister 문제 회피)
-      setValue("skills.main" as any, newSkills, { shouldDirty: true });
+      setValue("skills.main", newSkills, { shouldDirty: true });
     },
     [setValue]
   );
