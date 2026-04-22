@@ -549,6 +549,132 @@ describe("submitTalentRegister — 활동 분기 (T2 후속)", () => {
 });
 
 /**
+ * 언어 섹션 분기 로직
+ *
+ * - defaultValues.languages 에 있던 id + 값 변경 → PUT (updateLanguage)
+ * - defaultValues.languages 에 없던 항목 → POST (createLanguages, 배치)
+ * - languageName 이 빈 값 → skip (유효성 필터)
+ */
+describe("submitTalentRegister — 언어 분기 (T3 후속)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  type LanguageItem = NonNullable<TalentRegisterFormValues["languages"]>[number];
+
+  function buildValues(languages: LanguageItem[]): TalentRegisterFormValues {
+    const v = cloneDefaultValues();
+    v.languages = languages;
+    return v;
+  }
+
+  it("기존 변경 1개 + 신규 1개 → updateLanguage 1회, createLanguages 1회(payload·반환 data 반영)", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const languagesApi = await import("@/lib/api/languages");
+
+    const original: LanguageItem[] = [
+      {
+        id: 60,
+        languageName: "TOEIC",
+        issueDate: "2024-01",
+      },
+      {
+        id: 61,
+        languageName: "OPIc",
+        issueDate: "2024-02",
+      },
+    ];
+    const current: LanguageItem[] = [
+      {
+        ...original[0],
+        issueDate: "2024-03",
+      },
+      { ...original[1] },
+      {
+        languageName: "IELTS",
+        issueDate: "2025-01",
+      },
+    ];
+
+    vi.mocked(languagesApi.updateLanguage).mockResolvedValueOnce({
+      id: 600,
+      languageName: "TOEIC",
+      level: "default",
+      issueDate: "2024-03-01",
+      createdAt: "",
+      updatedAt: "",
+    });
+    vi.mocked(languagesApi.createLanguages).mockResolvedValueOnce([
+      {
+        id: 700,
+        languageName: "IELTS",
+        level: "default",
+        issueDate: "2025-01-01",
+        createdAt: "",
+        updatedAt: "",
+      },
+    ]);
+
+    const values = buildValues(current);
+    const methods = makeMethods({
+      values,
+      defaultValues: { ...cloneDefaultValues(), languages: original },
+    });
+
+    const res = await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(languagesApi.updateLanguage).toHaveBeenCalledTimes(1);
+    expect(languagesApi.updateLanguage).toHaveBeenCalledWith(1, 60, {
+      languageName: "TOEIC",
+      level: "default",
+      issueDate: "2024-03-01",
+    });
+
+    expect(languagesApi.createLanguages).toHaveBeenCalledTimes(1);
+    expect(languagesApi.createLanguages).toHaveBeenCalledWith(1, [
+      {
+        languageName: "IELTS",
+        level: "default",
+        issueDate: "2025-01-01",
+      },
+    ]);
+
+    expect(res.success).toBe(true);
+    expect(res.data?.languages?.[0]).toMatchObject({
+      id: 600,
+      languageName: "TOEIC",
+      issueDate: "2024-03",
+    });
+    expect(res.data?.languages?.[2]).toMatchObject({
+      id: 700,
+      languageName: "IELTS",
+      issueDate: "2025-01",
+    });
+  });
+
+  it("신규 항목이 languageName 빈 값 → 호출 0회 (유효성 필터)", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const languagesApi = await import("@/lib/api/languages");
+
+    const values = buildValues([
+      {
+        languageName: "",
+        issueDate: "2025-01",
+      },
+    ]);
+    const methods = makeMethods({
+      values,
+      defaultValues: { ...cloneDefaultValues(), languages: [] },
+    });
+
+    await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(languagesApi.updateLanguage).not.toHaveBeenCalled();
+    expect(languagesApi.createLanguages).not.toHaveBeenCalled();
+  });
+});
+
+/**
  * 공통 플로우 (T7): 업로드 순서 · status 처리 · 실패 처리
  */
 describe("submitTalentRegister — 업로드 순서·status·실패 처리 (T7)", () => {
