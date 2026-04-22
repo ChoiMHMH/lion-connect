@@ -239,6 +239,178 @@ describe("submitTalentRegister — 학력 분기 (T6)", () => {
 });
 
 /**
+ * 경력 섹션 분기 로직
+ *
+ * - defaultValues.careers 에 있던 id + 값 변경 → PUT (updateExperience)
+ * - defaultValues.careers 에 없던 항목 → POST (createExperiences, 배치)
+ * - companyName/position 둘 다 빈 값 → skip (유효성 필터)
+ */
+describe("submitTalentRegister — 경력 분기 (T1 후속)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  type CareerItem = NonNullable<TalentRegisterFormValues["careers"]>[number];
+
+  function buildValues(careers: CareerItem[]): TalentRegisterFormValues {
+    const v = cloneDefaultValues();
+    v.careers = careers;
+    return v;
+  }
+
+  it("기존 변경 1개 + 신규 1개 → updateExperience 1회, createExperiences 1회(payload·반환 data 반영)", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const experiencesApi = await import("@/lib/api/experiences");
+
+    const original: CareerItem[] = [
+      {
+        id: 20,
+        companyName: "이전회사",
+        department: "Platform",
+        position: "Engineer",
+        startDate: "2020-01",
+        endDate: "2022-12",
+        isCurrent: false,
+        description: "before",
+      },
+      {
+        id: 21,
+        companyName: "그대로회사",
+        department: "Frontend",
+        position: "Developer",
+        startDate: "2023-01",
+        endDate: "",
+        isCurrent: true,
+        description: "",
+      },
+    ];
+    const current: CareerItem[] = [
+      {
+        ...original[0],
+        companyName: "변경회사",
+        endDate: "",
+        isCurrent: true,
+        description: "changed",
+      },
+      { ...original[1] },
+      {
+        companyName: "신규회사",
+        department: "",
+        position: "Junior Engineer",
+        startDate: "2025-01",
+        endDate: "",
+        description: "",
+      },
+    ];
+
+    vi.mocked(experiencesApi.updateExperience).mockResolvedValueOnce({
+      id: 200,
+      companyName: "변경회사",
+      department: "Platform",
+      position: "Engineer",
+      startDate: "2020-01-01",
+      endDate: null,
+      isCurrent: true,
+      description: "changed",
+      createdAt: "",
+      updatedAt: "",
+    });
+    vi.mocked(experiencesApi.createExperiences).mockResolvedValueOnce([
+      {
+        id: 300,
+        companyName: "신규회사",
+        department: null,
+        position: "Junior Engineer",
+        startDate: "2025-01-01",
+        endDate: null,
+        isCurrent: false,
+        description: null,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ]);
+
+    const values = buildValues(current);
+    const methods = makeMethods({
+      values,
+      defaultValues: { ...cloneDefaultValues(), careers: original },
+    });
+
+    const res = await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(experiencesApi.updateExperience).toHaveBeenCalledTimes(1);
+    expect(experiencesApi.updateExperience).toHaveBeenCalledWith(1, 20, {
+      companyName: "변경회사",
+      department: "Platform",
+      position: "Engineer",
+      startDate: "2020-01-01",
+      endDate: undefined,
+      isCurrent: true,
+      description: "changed",
+    });
+
+    expect(experiencesApi.createExperiences).toHaveBeenCalledTimes(1);
+    expect(experiencesApi.createExperiences).toHaveBeenCalledWith(1, [
+      {
+        companyName: "신규회사",
+        department: "",
+        position: "Junior Engineer",
+        startDate: "2025-01-01",
+        endDate: undefined,
+        isCurrent: false,
+        description: "",
+      },
+    ]);
+
+    expect(res.success).toBe(true);
+    expect(res.data?.careers?.[0]).toMatchObject({
+      id: 200,
+      companyName: "변경회사",
+      startDate: "2020-01",
+      endDate: "",
+      isCurrent: true,
+      description: "changed",
+    });
+    expect(res.data?.careers?.[2]).toMatchObject({
+      id: 300,
+      companyName: "신규회사",
+      department: "",
+      position: "Junior Engineer",
+      startDate: "2025-01",
+      endDate: "",
+      isCurrent: false,
+      description: "",
+    });
+  });
+
+  it("신규 항목이 companyName/position 모두 빈 값 → 호출 0회 (유효성 필터)", async () => {
+    const { submitTalentRegister } = await import("../submitTalentRegister");
+    const experiencesApi = await import("@/lib/api/experiences");
+
+    const values = buildValues([
+      {
+        companyName: "",
+        department: "빈 부서",
+        position: "",
+        startDate: "2025-01",
+        endDate: "",
+        isCurrent: false,
+        description: "필수값 없음",
+      },
+    ]);
+    const methods = makeMethods({
+      values,
+      defaultValues: { ...cloneDefaultValues(), careers: [] },
+    });
+
+    await submitTalentRegister({ values, methods, profileId: 1, isTempSave: true });
+
+    expect(experiencesApi.updateExperience).not.toHaveBeenCalled();
+    expect(experiencesApi.createExperiences).not.toHaveBeenCalled();
+  });
+});
+
+/**
  * 공통 플로우 (T7): 업로드 순서 · status 처리 · 실패 처리
  */
 describe("submitTalentRegister — 업로드 순서·status·실패 처리 (T7)", () => {
