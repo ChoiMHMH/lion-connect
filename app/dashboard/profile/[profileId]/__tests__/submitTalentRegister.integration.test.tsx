@@ -1,5 +1,9 @@
+import { act } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { useFormContext } from "react-hook-form";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { TalentRegisterFormValues } from "@/schemas/talent/talentRegisterSchema";
 
 import {
   renderSubmitTalentRegisterHarness,
@@ -11,6 +15,25 @@ import {
   showToastMock,
 } from "./submitTalentRegister.integration.mocks";
 import EducationSection from "../_components/sections/EducationSection";
+
+function JobDirtyFieldsInputs() {
+  const { setValue, watch } = useFormContext<TalentRegisterFormValues>();
+  const role = watch("job.role");
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => {
+          setValue("job.role", "frontend", { shouldValidate: true, shouldDirty: true });
+        }}
+      >
+        set frontend role
+      </button>
+      <span>{role}</span>
+    </div>
+  );
+}
 
 describe("submitTalentRegister integration harness (T1)", () => {
   beforeEach(() => {
@@ -268,5 +291,84 @@ describe("EducationSection integration (T4)", () => {
 
     expect(screen.getByText("학력 삭제에 실패했습니다.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "삭제" })).toBeInTheDocument();
+  });
+});
+
+describe("jobs dirtyFields integration (T5)", () => {
+  beforeEach(() => {
+    resetIntegrationMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("job 값을 바꾸지 않고 임시저장하면 updateJobs 를 호출하지 않는다", async () => {
+    const jobsApi = await import("@/lib/api/jobs");
+
+    renderSubmitTalentRegisterHarness({
+      children: <JobDirtyFieldsInputs />,
+      initialValues: createIntegrationValues(),
+      profileId: 1,
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(jobsApi.updateJobs).not.toHaveBeenCalled();
+  });
+
+  it("job.role 을 변경한 뒤 임시저장하면 role id payload 로 updateJobs 를 호출한다", async () => {
+    const jobsApi = await import("@/lib/api/jobs");
+
+    renderSubmitTalentRegisterHarness({
+      children: <JobDirtyFieldsInputs />,
+      initialValues: createIntegrationValues(),
+      profileId: 1,
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "set frontend role" }));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(jobsApi.updateJobs).toHaveBeenCalledTimes(1);
+    expect(jobsApi.updateJobs).toHaveBeenCalledWith(1, { ids: [1] });
+  });
+
+  it("job.role 을 변경한 뒤 성공적으로 임시저장하면 reset 이후 다시 저장해도 현재 dirty 상태가 유지되어 updateJobs 를 다시 호출한다", async () => {
+    const jobsApi = await import("@/lib/api/jobs");
+
+    renderSubmitTalentRegisterHarness({
+      children: <JobDirtyFieldsInputs />,
+      initialValues: createIntegrationValues(),
+      profileId: 1,
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "set frontend role" }));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(jobsApi.updateJobs).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(jobsApi.updateJobs).toHaveBeenCalledTimes(2);
+    expect(jobsApi.updateJobs).toHaveBeenNthCalledWith(2, 1, { ids: [1] });
   });
 });
