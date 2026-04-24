@@ -10,10 +10,6 @@
 - 커밋 규칙: `.agents/commit.md`
 - 프로젝트 컨벤션: `.agents/conventions.md`
 
-## 환경별 참고 문서
-
-- Windows PowerShell에서 한국어 파일·PR·issue 본문 작업 시: `.agents/windows.md`
-
 ## 절대 금지
 
 - `main` 브랜치 직접 커밋·push
