@@ -10,6 +10,7 @@ import {
   routerPushMock,
   showToastMock,
 } from "./submitTalentRegister.integration.mocks";
+import EducationSection from "../_components/sections/EducationSection";
 
 describe("submitTalentRegister integration harness (T1)", () => {
   beforeEach(() => {
@@ -98,5 +99,86 @@ describe("TalentRegisterNav integration (T2)", () => {
     expect(onTempSave).not.toHaveBeenCalled();
     expect(showToastMock).toHaveBeenCalledTimes(1);
     expect(showToastMock).toHaveBeenLastCalledWith(expect.any(String), "error");
+  });
+});
+
+describe("EducationSection integration (T3)", () => {
+  beforeEach(() => {
+    resetIntegrationMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("첫 임시저장으로 생성된 학력은 reset 이후 다시 임시저장해도 중복 POST 되지 않는다", async () => {
+    const educationsApi = await import("@/lib/api/educations");
+
+    vi.mocked(educationsApi.createEducations).mockResolvedValueOnce([
+      {
+        id: 101,
+        schoolName: "연성대학교",
+        major: "컴퓨터공학",
+        status: "GRADUATED",
+        startDate: "2020-03-01",
+        endDate: "2024-02-01",
+        description: "",
+        degree: "",
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      },
+    ]);
+
+    renderSubmitTalentRegisterHarness({
+      children: <EducationSection profileId={1} />,
+      initialValues: createIntegrationValues(),
+      profileId: 1,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "학력 추가" }));
+
+    const schoolNameInputs = screen.getAllByPlaceholderText("학교명을 입력해주세요");
+    const majorInputs = screen.getAllByPlaceholderText("전공을 입력해주세요");
+
+    fireEvent.change(schoolNameInputs[1], { target: { value: "연성대학교" } });
+    fireEvent.change(majorInputs[1], { target: { value: "컴퓨터공학" } });
+
+    fireEvent.change(document.getElementById("educations-1-start-date")!, {
+      target: { value: "2020-03" },
+    });
+    fireEvent.change(document.getElementById("educations-1-end-date")!, {
+      target: { value: "2024-02" },
+    });
+    fireEvent.change(document.getElementById("educations-1-status")!, {
+      target: { value: "GRADUATED" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(educationsApi.createEducations).toHaveBeenCalledTimes(1);
+    expect(educationsApi.createEducations).toHaveBeenCalledWith(1, [
+      {
+        schoolName: "연성대학교",
+        major: "컴퓨터공학",
+        status: "GRADUATED",
+        startDate: "2020-03-01",
+        endDate: "2024-02-01",
+        description: "",
+        degree: "",
+      },
+    ]);
+
+    vi.mocked(educationsApi.createEducations).mockClear();
+    vi.mocked(educationsApi.updateEducation).mockClear();
+    showToastMock.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(educationsApi.createEducations).not.toHaveBeenCalled();
+    expect(educationsApi.updateEducation).not.toHaveBeenCalled();
+    expect(showToastMock).toHaveBeenCalledWith("임시 저장되었습니다!");
   });
 });
