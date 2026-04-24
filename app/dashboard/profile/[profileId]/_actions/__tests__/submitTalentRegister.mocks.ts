@@ -7,10 +7,12 @@ vi.mock("@/lib/api/profiles", () => ({
 vi.mock("@/lib/api/educations", () => ({
   createEducations: vi.fn().mockResolvedValue([]),
   updateEducation: vi.fn().mockResolvedValue({}),
+  deleteEducation: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("@/lib/api/experiences", () => ({
   createExperiences: vi.fn().mockResolvedValue([]),
   updateExperience: vi.fn().mockResolvedValue({}),
+  deleteExperience: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("@/lib/api/languages", () => ({
   createLanguages: vi.fn().mockResolvedValue([]),

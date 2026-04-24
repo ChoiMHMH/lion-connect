@@ -44,6 +44,7 @@ vi.mock("@/store/toastStore", () => ({
 }));
 
 export function resetIntegrationMocks() {
+  vi.clearAllMocks();
   routerPushMock.mockReset();
   showToastMock.mockReset();
   hideToastMock.mockReset();

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -180,5 +180,93 @@ describe("EducationSection integration (T3)", () => {
     expect(educationsApi.createEducations).not.toHaveBeenCalled();
     expect(educationsApi.updateEducation).not.toHaveBeenCalled();
     expect(showToastMock).toHaveBeenCalledWith("임시 저장되었습니다!");
+  });
+});
+
+describe("EducationSection integration (T4)", () => {
+  beforeEach(() => {
+    resetIntegrationMocks();
+  });
+
+  it("기존 학력을 삭제하면 다음 임시저장에서 삭제된 항목을 다시 저장하지 않는다", async () => {
+    const educationsApi = await import("@/lib/api/educations");
+
+    renderSubmitTalentRegisterHarness({
+      children: <EducationSection profileId={1} />,
+      initialValues: createIntegrationValues({
+        educations: [
+          {
+            id: 77,
+            schoolName: "연성대학교",
+            major: "컴퓨터공학",
+            status: "GRADUATED",
+            startDate: "2020-03",
+            endDate: "2024-02",
+            description: "",
+            degree: "",
+          },
+        ],
+      }),
+      profileId: 1,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+
+    await waitFor(() => {
+      expect(educationsApi.deleteEducation).toHaveBeenCalledWith(1, 77);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "삭제" })).not.toBeInTheDocument();
+    });
+
+    vi.mocked(educationsApi.createEducations).mockClear();
+    vi.mocked(educationsApi.updateEducation).mockClear();
+    showToastMock.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1100);
+    });
+
+    expect(educationsApi.createEducations).not.toHaveBeenCalled();
+    expect(educationsApi.updateEducation).not.toHaveBeenCalled();
+    expect(showToastMock).toHaveBeenCalledWith("임시 저장되었습니다!");
+  });
+
+  it("학력 삭제 API 가 실패하면 항목을 유지하고 에러 메시지를 보여준다", async () => {
+    const educationsApi = await import("@/lib/api/educations");
+
+    vi.mocked(educationsApi.deleteEducation).mockRejectedValueOnce(
+      new Error("학력 삭제에 실패했습니다.")
+    );
+
+    renderSubmitTalentRegisterHarness({
+      children: <EducationSection profileId={1} />,
+      initialValues: createIntegrationValues({
+        educations: [
+          {
+            id: 77,
+            schoolName: "연성대학교",
+            major: "컴퓨터공학",
+            status: "GRADUATED",
+            startDate: "2020-03",
+            endDate: "2024-02",
+            description: "",
+            degree: "",
+          },
+        ],
+      }),
+      profileId: 1,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+
+    await waitFor(() => {
+      expect(educationsApi.deleteEducation).toHaveBeenCalledWith(1, 77);
+    });
+
+    expect(screen.getByText("학력 삭제에 실패했습니다.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "삭제" })).toBeInTheDocument();
   });
 });
