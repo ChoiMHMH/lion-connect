@@ -74,7 +74,7 @@ describe("TalentRegisterNav integration (T2)", () => {
   });
 
   it("임시저장 버튼을 연속 클릭해도 마지막 클릭 기준 1초 뒤에 저장을 1회만 실행한다", async () => {
-    const onTempSave = vi.fn().mockResolvedValue(undefined);
+    const onTempSave = vi.fn().mockResolvedValue({ success: true });
     renderSubmitTalentRegisterHarness({
       initialValues: createIntegrationValues(),
       onTempSave,
@@ -370,5 +370,51 @@ describe("jobs dirtyFields integration (T5)", () => {
 
     expect(jobsApi.updateJobs).toHaveBeenCalledTimes(2);
     expect(jobsApi.updateJobs).toHaveBeenNthCalledWith(2, 1, { ids: [1] });
+  });
+});
+
+describe("temp-save toast integration (T6)", () => {
+  beforeEach(() => {
+    resetIntegrationMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("임시저장이 성공하면 성공 토스트는 한 번만 노출된다", async () => {
+    const onTempSave = vi.fn().mockResolvedValue({ success: true });
+
+    renderSubmitTalentRegisterHarness({
+      initialValues: createIntegrationValues(),
+      onTempSave,
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(onTempSave).toHaveBeenCalledTimes(1);
+    expect(showToastMock).toHaveBeenCalledTimes(1);
+    expect(showToastMock).toHaveBeenCalledWith("임시 저장되었습니다!");
+  });
+
+  it("임시저장이 실패하면 성공 토스트를 노출하지 않는다", async () => {
+    const onTempSave = vi.fn().mockResolvedValue({ success: false, error: new Error("boom") });
+
+    renderSubmitTalentRegisterHarness({
+      initialValues: createIntegrationValues(),
+      onTempSave,
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(onTempSave).toHaveBeenCalledTimes(1);
+    expect(showToastMock).not.toHaveBeenCalled();
   });
 });

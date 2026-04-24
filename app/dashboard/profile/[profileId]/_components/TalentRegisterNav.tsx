@@ -54,7 +54,6 @@ export default function TalentRegisterNav({
         }
 
         await onTempSave();
-        showToast("임시 저장되었습니다!");
       }, 1000);
     }
   };
