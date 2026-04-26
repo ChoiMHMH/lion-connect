@@ -61,6 +61,68 @@ function ExpTagsDirtyFieldsInputs() {
   );
 }
 
+function JobResubmitInputs() {
+  const { setValue, watch } = useFormContext<TalentRegisterFormValues>();
+  const role = watch("job.role");
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => {
+          setValue("job.role", "frontend", { shouldValidate: true, shouldDirty: true });
+        }}
+      >
+        set frontend role
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setValue("job.role", "backend", { shouldValidate: true, shouldDirty: true });
+        }}
+      >
+        set backend role
+      </button>
+      <span>{role}</span>
+    </div>
+  );
+}
+
+function createCompletedIntegrationValues(): TalentRegisterFormValues {
+  return createIntegrationValues({
+    profile: {
+      avatar: null,
+      name: "홍길동",
+      title: "프론트엔드 개발자",
+      phone: "010-1234-5678",
+      email: "hong@example.com",
+      introduction: "사용자 경험을 개선하는 프론트엔드 개발자입니다.",
+      visibility: "PRIVATE",
+    },
+    job: {
+      category: "development",
+      role: "backend",
+      experiences: ["bootcamp"],
+    },
+    educations: [
+      {
+        schoolName: "멋사대학교",
+        major: "컴퓨터공학",
+        status: "GRADUATED",
+        startDate: "2020-03",
+        endDate: "2024-02",
+        description: "",
+        degree: "",
+      },
+    ],
+    portfolio: "https://example.com/portfolio.pdf",
+    portfolioFile: { url: "https://example.com/portfolio.pdf" },
+    workDrivenTest: Object.fromEntries(
+      Array.from({ length: 16 }, (_, index) => [`q${index + 1}`, 3])
+    ) as Record<string, number>,
+  });
+}
+
 describe("submitTalentRegister integration harness (T1)", () => {
   beforeEach(() => {
     resetIntegrationMocks();
@@ -645,7 +707,7 @@ describe("expTags dirtyFields integration (T12)", () => {
     expect(expTagsApi.updateExpTags).toHaveBeenCalledWith(1, { ids: [1, 4] });
   });
 
-  it("job.experiences 를 바꾼 뒤 성공적으로 임시저장하면 reset 이후 다시 저장해도 현재 dirty 상태가 유지되어 updateExpTags 를 다시 호출한다", async () => {
+  it("job.experiences 를 바꾼 뒤 성공적으로 임시저장하면 reset 이후 다시 저장해도 updateExpTags 를 다시 호출하지 않는다", async () => {
     const expTagsApi = await import("@/lib/api/expTags");
 
     renderSubmitTalentRegisterHarness({
@@ -670,8 +732,7 @@ describe("expTags dirtyFields integration (T12)", () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
 
-    expect(expTagsApi.updateExpTags).toHaveBeenCalledTimes(2);
-    expect(expTagsApi.updateExpTags).toHaveBeenNthCalledWith(2, 1, { ids: [1, 4] });
+    expect(expTagsApi.updateExpTags).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -724,7 +785,7 @@ describe("jobs dirtyFields integration (T5)", () => {
     expect(jobsApi.updateJobs).toHaveBeenCalledWith(1, { ids: [1] });
   });
 
-  it("job.role 을 변경한 뒤 성공적으로 임시저장하면 reset 이후 다시 저장해도 현재 dirty 상태가 유지되어 updateJobs 를 다시 호출한다", async () => {
+  it("job.role 을 변경한 뒤 성공적으로 임시저장하면 reset 이후 다시 저장해도 updateJobs 를 다시 호출하지 않는다", async () => {
     const jobsApi = await import("@/lib/api/jobs");
 
     renderSubmitTalentRegisterHarness({
@@ -749,8 +810,67 @@ describe("jobs dirtyFields integration (T5)", () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
 
-    expect(jobsApi.updateJobs).toHaveBeenCalledTimes(2);
-    expect(jobsApi.updateJobs).toHaveBeenNthCalledWith(2, 1, { ids: [1] });
+    expect(jobsApi.updateJobs).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("final submit after temp save integration (T13)", () => {
+  beforeEach(() => {
+    resetIntegrationMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("임시저장 후 dirty 가 초기화되어도 다시 값을 바꾸면 최종 저장이 zod 검증과 submit 을 정상 처리한다", async () => {
+    const jobsApi = await import("@/lib/api/jobs");
+    const profilesApi = await import("@/lib/api/profiles");
+
+    renderSubmitTalentRegisterHarness({
+      children: <JobResubmitInputs />,
+      initialValues: createCompletedIntegrationValues(),
+      profileId: 1,
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "set frontend role" }));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "임시 저장" }));
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(jobsApi.updateJobs).toHaveBeenCalledTimes(1);
+    expect(jobsApi.updateJobs).toHaveBeenLastCalledWith(1, { ids: [1] });
+
+    vi.mocked(jobsApi.updateJobs).mockClear();
+    vi.mocked(profilesApi.updateProfile).mockClear();
+    showToastMock.mockClear();
+    routerPushMock.mockClear();
+    vi.useRealTimers();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "set backend role" }));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "작성 완료" }));
+    });
+
+    await waitFor(() => {
+      expect(profilesApi.updateProfile).toHaveBeenCalledTimes(1);
+    });
+
+    const [, profilePayload] = vi.mocked(profilesApi.updateProfile).mock.calls[0];
+
+    expect(profilePayload.status).toBe("COMPLETED");
+    expect(jobsApi.updateJobs).toHaveBeenCalledTimes(1);
+    expect(jobsApi.updateJobs).toHaveBeenCalledWith(1, { ids: [2] });
+    expect(showToastMock).toHaveBeenCalledWith("인재 프로필이 성공적으로 등록되었습니다!");
+    expect(routerPushMock).toHaveBeenCalledWith("/profile");
   });
 });
 
