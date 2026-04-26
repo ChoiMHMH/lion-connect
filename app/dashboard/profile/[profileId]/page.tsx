@@ -134,7 +134,7 @@ export default function TalentRegisterPage({ params }: { params: Promise<{ profi
       if (result.data) {
         // 임시 저장: 서버에서 받은 전체 데이터(ID 포함)로 reset하여 defaultValues 업데이트
         // 이렇게 해야 다시 임시저장 시 POST가 아닌 PUT이 호출됨
-        methods.reset(result.data, { keepDirty: true, keepTouched: true, keepErrors: true });
+        methods.reset(result.data, { keepTouched: true, keepErrors: true });
       }
       showToast("임시 저장되었습니다!");
     } else {
